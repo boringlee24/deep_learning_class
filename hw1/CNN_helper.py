@@ -26,7 +26,7 @@ class MNIST_Classifier(nn.Module):
 class CIFAR10_Classifier(nn.Module):
     def __init__(self, dropout_prob=0.4):
         super(CIFAR10_Classifier, self).__init__()
-        self.conv1 = nn.Conv2d(3, 32, 3, padding=1) # 32 -> 32
+        self.conv1 = nn.Conv2d(3, 32, 5, padding=2) # 32 -> 32
         self.bn1 = nn.BatchNorm2d(32)
         self.conv2 = nn.Conv2d(32, 64, 3, padding=1) # 32 -> 32
         self.bn2 = nn.BatchNorm2d(64)

@@ -13,8 +13,9 @@
             "justMyCode": false,
             "cwd": "${fileDirname}",
             "args": [
-                "train",
-                "--mnist"
+                "test",
+                "cifar.png",
+                // "--mnist"
             ]
         }
     ]

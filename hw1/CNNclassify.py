@@ -133,25 +133,79 @@ def trainCNN(args):
     writer.close()
     print('Finished Training')
 
-    # # save the trained model
-    # PATH = './' + dataset_name + '_net.pth'
-    # torch.save(net.state_dict(), PATH)
+def testCNN(args):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(f"Testing using {device}")
 
-    # # test the network on the test data
-    # dataiter = iter(testloader)
-    # images, labels = dataiter.next()
-    # # print images
-    # # imshow(torchvision.utils.make_grid(images))
-    # # plt.show()
-    # print('GroundTruth: ', ' '.join('%5s' % labels[j].numpy() for j in range(4)))
+    # run inference on args.filename picture
+    image = plt.imread(args.filename)
+    mnist_image = False
+    # get dimension of the image and decide if it is cifar or mnist
+    if len(image.shape) == 3 and image.shape[0] == 32:
+        print("Using CIFAR10 trained model")
+        # load the trained model from model/CIFAR10_Classifier.pth
+        model = CIFAR10_Classifier()
+        model.load_state_dict(torch.load('./model/CIFAR10_Classifier.pth'))
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5,0.5,0.5))  # Normalize each channel to range [-1, 1]
+        ])
+    elif len(image.shape) == 2 and image.shape[0] == 28:
+        print("Using MNSIT trained model")
+        # load the trained model from model/MNIST_Classifier.pth
+        model = MNIST_Classifier()
+        model.load_state_dict(torch.load('./model/MNIST_Classifier.pth'))
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.5,), (0.5,))  # Normalize to range [-1, 1]
+        ])
+        mnist_image = True
+    else:
+        raise RuntimeError("Error: unrecognized image format")
+    
+    image = transform(image)
+    image = image.unsqueeze(0)
+    image = image.to(device)
+    model.to(device)
+    model.eval()
+    with torch.no_grad():
+        output = model(image)
+        _, predicted = torch.max(output, 1)
 
-    # net = Classifier()
-    # net.load_state_dict(torch.load(PATH))
-    # outputs = net(images)
-    # _, predicted = torch.max(outputs, 1)
-    # print('Predicted: ', ' '.join('%5s' % predicted[j].numpy()
-    #                               for j in range(4)))
+    # convert the prediction from number to class name
+    if mnist_image:
+        classes = ('0', '1', '2', '3', '4',
+                   '5', '6', '7', '8', '9')
+    else:
+        classes = ('plane', 'car', 'bird', 'cat',
+                   'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+    print(f"prediction result: {classes[predicted.item()]}")
+    print(f"predicted probability: {round(torch.nn.functional.softmax(output, dim=1)[0][predicted].item(),4)}")
         
+    feature_maps = model.conv1(image)
+    # Number of feature maps to visualize (in this case, 32)
+    num_feature_maps = feature_maps.size(1)
+
+    # Create a grid to display the feature maps
+    fig, axes = plt.subplots(nrows=4, ncols=8, figsize=(15, 8))
+
+    for i in range(num_feature_maps):
+        row = i // 8
+        col = i % 8
+        ax = axes[row, col]
+
+        # Get a specific feature map
+        feature_map = feature_maps[0, i].detach().cpu().numpy()
+
+        ax.imshow(feature_map, cmap='gray') 
+        ax.axis('off')
+
+    plt.tight_layout()
+    if mnist_image:
+        save_path = f'pngs/CONV_rslt_mnist.png'
+    else:
+        save_path = f'pngs/CONV_rslt_cifar.png'
+    plt.savefig(save_path)
 
 def main():
     parser = argparse.ArgumentParser(description='CNN classification')
@@ -159,17 +213,22 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="Sub-command to run.")
 
     train_parser = subparsers.add_parser("train", help="Train the model.")
-    train_parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training.")
+    train_parser.add_argument("--epochs", type=int, default=20, help="Number of epochs for training.")
     train_parser.add_argument("--lr", type=float, default=0.001, help="Learning rate for training.")
     train_parser.add_argument("--mnist", action="store_true", help="Train on MNIST dataset.")
     train_parser.add_argument("--cifar", action="store_true", help="Train on CIFAR dataset.")
     train_parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training.")
-    train_parser.add_argument("--print_freq", type=int, default=1, help="Print frequency")
+    train_parser.add_argument("--print_freq", type=int, default=2, help="Print frequency")
+
+    test_parser = subparsers.add_parser("test", help="Test the trained model.")
+    test_parser.add_argument("filename", type=str, help="Filename for inference.")
 
     args = parser.parse_args()
 
     if args.command == "train":
         trainCNN(args)
+    if args.command == "test":
+        testCNN(args)
 
 if __name__ == '__main__':
     main()
