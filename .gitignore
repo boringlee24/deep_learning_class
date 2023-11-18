@@ -1,5 +1,7 @@
 *.pth
 runs/
+.data/
+hw2_dataset/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
