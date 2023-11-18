@@ -12,11 +12,11 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "cwd": "${fileDirname}",
-            // "args": [
-            //     "test",
-            //     "cifar.png",
-            //     // "--mnist"
-            // ]
+            "args": [
+                "test",
+                // "cifar.png",
+                // "--mnist"
+            ]
         }
     ]
 }
