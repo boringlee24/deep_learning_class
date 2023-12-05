@@ -1,0 +1,3 @@
+[submodule "hw3/YOLOv6"]
+	path = hw3/YOLOv6
+	url = https://github.com/boringlee24/YOLOv6.git
